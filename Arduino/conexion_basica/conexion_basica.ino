@@ -9,6 +9,11 @@
 ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
+int PIN_TRG = 10;
+int PIN_ECHO = 9;
+
+float tiempo;
+float distancia;
 
 // SETUP
 void setup() {
@@ -16,34 +21,39 @@ void setup() {
   Serial.begin(115200);
 
   WiFiMulti.addAP("LUZMARINA", "+6-5LJB%=*M4j4l452. 47");
-  
 
   while (WiFiMulti.run() != WL_CONNECTED) {
 
     Serial.println("connecting...");
-    delay(100);
+    delay(1000);
   }
 
   webSocket.begin("192.168.0.5", 3009, "/socket.io/?transport=websocket");
-  webSocket.onEvent(icarusEvent);
+  //webSocket.begin("192.168.0.5", 3009, "/socket.io/?EIO=4");
+  webSocket.onEvent(webSocketEvent);
 
   pinMode(13, OUTPUT);
   pinMode(12, OUTPUT);  
   pinMode(5, OUTPUT);  
-  pinMode(4, OUTPUT);   
+  pinMode(4, OUTPUT);
+
+  pinMode(PIN_TRG, OUTPUT);
+  pinMode(PIN_ECHO, INPUT);
+
+  /*sensor;*/
 }
 
 // LOOP
-void loop() {
-  
+void loop() {  
   webSocket.loop();
+  
 }
 
-void icarusEvent(WStype_t type, uint8_t * payload, size_t length) {
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
   Serial.println("=========================");
 
-
+  sensor;
   switch(type) {
 
     case WStype_TEXT: {
@@ -85,4 +95,19 @@ void icarusEvent(WStype_t type, uint8_t * payload, size_t length) {
       
     }
 
+}
+void sensor(){
+  digitalWrite(PIN_TRG, LOW);
+  delayMicroseconds(4);
+
+  digitalWrite(PIN_TRG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PIN_TRG, LOW);
+
+  tiempo = pulseIn(PIN_ECHO, HIGH);
+  distancia = tiempo/58.3;
+
+  Serial.println(distancia);
+
+  delay(1000);
 }

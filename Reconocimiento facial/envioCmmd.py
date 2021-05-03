@@ -30,3 +30,4 @@ print(today.strftime("%y-%m-%d"))
 
 # envio la IP del equipo host
 print(ip_address)
+enviar(1)

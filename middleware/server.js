@@ -68,6 +68,17 @@ io.on('connection', (socket) => {
         
     });  
 
+    socket.on('ArduinoMessage', msg => {
+        console.log(msg);
+        const Ard_response = {
+            ip_origin: msg.ip_origin,
+            commadn: msg.command,
+            date: new Date()
+        }
+        logs(Ard_response);
+        
+    });
+
     socket.on('disconnect', (msg) => {
         console.log('microservice disconected');
     })
