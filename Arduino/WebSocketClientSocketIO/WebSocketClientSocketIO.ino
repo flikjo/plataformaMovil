@@ -11,14 +11,33 @@
 ESP8266WiFiMulti WiFiMulti;
 SocketIOclient socketIO;
 
-#define PIN_TRG D4
-#define PIN_ECHO D5
+#define EnableA   15   // Enable motors Right        GPIO15(D8)        
+#define EnableB   4    // Enable motors Left         GPIO4 (D2)
+#define IN1  13        // L298N in1 motors Right     GPIO13(D7)
+#define IN2  12        // L298N in2 motors Right     GPIO12(D6)
+#define IN3  14        // L298N in3 motors Left      GPIO14(D5)
+#define IN4  0         // L298N in4 motors Left      GPIO0 (D3)      
+
+#define PIN_TRG D1
+#define PIN_ECHO D0
 
 float tiempo;
 float distancia;
 #define USE_SERIAL Serial1
 
 void setup() {
+
+  pinMode(EnableA, OUTPUT);
+  pinMode(EnableB, OUTPUT);  
+  
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT); 
+
+  pinMode(PIN_TRG, OUTPUT);
+  pinMode(PIN_ECHO, INPUT);
+  
   Serial.begin(115200);
 
   WiFiMulti.addAP("LUZMARINA", "+6-5LJB%=*M4j4l452. 47");
@@ -30,97 +49,108 @@ void setup() {
     delay(1000);
   }
     // server address, port and URL
-  socketIO.begin("192.168.0.5", 3009, "/socket.io/?EIO=4");
+  socketIO.begin("18.204.15.139", 3009, "/socket.io/?EIO=4");
 
     // event handler
   socketIO.onEvent(socketIOEvent);
   
-  pinMode(13, OUTPUT);
-  pinMode(12, OUTPUT);  
-  pinMode(5, OUTPUT);  
-  pinMode(4, OUTPUT);
-
-  pinMode(PIN_TRG, OUTPUT);
-  pinMode(PIN_ECHO, INPUT);
+  
 }
 
 void loop() {
     socketIO.loop();
     
     digitalWrite(PIN_TRG, LOW);  //para generar un pulso limpio ponemos a LOW 4us
-    delayMicroseconds(500);
+    delayMicroseconds(4);
    
     digitalWrite(PIN_TRG, HIGH);  //generamos Trigger (disparo) de 10us
-    delayMicroseconds(150000);
+    delayMicroseconds(10);
     digitalWrite(PIN_TRG, LOW);
    
     tiempo = pulseIn(PIN_ECHO, HIGH);
-    distancia = tiempo/58.3;
+    distancia = (tiempo/2) /29;
 
     //Serial.println(distancia);
 
-    if(distancia < 15) {
-
-        // creat JSON message for Socket.IO (event)
-        DynamicJsonDocument doc(1024);
-        JsonArray array = doc.to<JsonArray>();
-        
-        // add evnet name
-        // Hint: socket.on('event_name', ....
-        array.add("ArduinoMessage");
-
-        // add payload (parameters) for the event
-        JsonObject param1 = array.createNestedObject();
-        param1["ip_origin"] = WiFi.localIP().toString();
-        param1["command"] = "stop";
-        
-
-        // JSON to String (serializion)
-        String output;
-        serializeJson(doc, output);
-
-        // Send event        
-        socketIO.sendEVENT(output);
-
-        // Print JSON for debugging
-        USE_SERIAL.println(output);
+    if(distancia >= 100 || distancia <= 0) {
+      Serial.println("****** no lectura *****");
+    }
+    else{
+        if(distancia <= 15 && distancia >= 13){
+            Serial.println(distancia);     
+            // creat JSON message for Socket.IO (event)
+            DynamicJsonDocument doc(1024);
+            JsonArray array = doc.to<JsonArray>();
+            
+            // add evnet name
+            // Hint: socket.on('event_name', ....
+            array.add("ArduinoMessage");
+    
+            // add payload (parameters) for the event
+            JsonObject param1 = array.createNestedObject();
+            param1["ip_origin"] = WiFi.localIP().toString();
+            param1["command"] = "stop";
+            
+    
+            // JSON to String (serializion)
+            String output;
+            serializeJson(doc, output);
+    
+            // Send event        
+            socketIO.sendEVENT(output);
+            
+            delay(1000);
+            // Print JSON for debugging
+            USE_SERIAL.println(output);
+        }
     }
 }
 
 
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
 
-    Serial.println("entro a socketIOEvent");
+    //Serial.println("entro a socketIOEvent");
     Serial.printf("[IOc] get payload: %s\n", payload);
 
     String response = (char*)payload;
     
     if (response.indexOf("backward") > 0) {
       Serial.printf("hacia atras");
-      digitalWrite(13, HIGH);
+      backwards();
       delay(1000);
-      digitalWrite(13, LOW);
-    }
-
-    if (response.indexOf("rightward") > 0) {
-      Serial.printf("hacia derecha");
-      digitalWrite(5, HIGH);
-      delay(1000);
-      digitalWrite(5, LOW);
+      stops();
     }
 
     if (response.indexOf("forward") > 0) {
       Serial.printf("hacia delante");
-      digitalWrite(12, HIGH);
+      forwards();
       delay(1000);
-      digitalWrite(12, LOW);
+      stops();
+    }
+
+    if (response.indexOf("rightward") > 0) {
+      Serial.printf("hacia derecha");
+      rightwards();
+      delay(1000);
+      stops();
     }
 
     if (response.indexOf("leftward") > 0) {
       Serial.printf("hacia izquierda");
-      digitalWrite(4, HIGH);
+      leftwards();
       delay(1000);
-      digitalWrite(4, LOW);
+      stops();
+    }
+
+    if (response.indexOf("stop") > 0) {
+      Serial.printf("Detenido");
+      stops();
+
+      delay(1000);
+
+      Serial.printf("hacia atras");
+      backwards();
+      
     }
 
     switch(type) {
@@ -136,6 +166,70 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
         case sIOtype_EVENT:
             USE_SERIAL.printf("[IOc] get event: %s\n", payload);
             break;
-        
     }
+}
+
+void prenda_esa_vaina(){
+  digitalWrite(EnableA, HIGH);
+  digitalWrite(EnableB, HIGH);
+}
+void forwards(){
+  prenda_esa_vaina();
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void backwards(){
+  prenda_esa_vaina();
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void rightwards(){
+  prenda_esa_vaina();
+
+  /*digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+
+  delay(500);
+  
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);*/
+
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  delay(500);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+}
+
+void leftwards(){
+  prenda_esa_vaina();
+
+  /*digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  delay(500);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);*/
+  
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  delay(500);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  
+}
+
+void stops(){
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
 }
