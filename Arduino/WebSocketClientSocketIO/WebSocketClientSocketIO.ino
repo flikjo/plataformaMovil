@@ -21,8 +21,8 @@ SocketIOclient socketIO;
 #define PIN_TRG D1
 #define PIN_ECHO D0
 
-float tiempo;
-float distancia;
+long tiempo;
+int distancia;
 #define USE_SERIAL Serial1
 
 void setup() {
@@ -49,7 +49,8 @@ void setup() {
     delay(1000);
   }
     // server address, port and URL
-  socketIO.begin("18.204.15.139", 3009, "/socket.io/?EIO=4");
+    // "/socket.io/?EIO=4", compatibilidad con ultima versión de socket.io
+  socketIO.begin("35.168.1.210", 3009, "/socket.io/?EIO=4");
 
     // event handler
   socketIO.onEvent(socketIOEvent);
@@ -68,88 +69,83 @@ void loop() {
     digitalWrite(PIN_TRG, LOW);
    
     tiempo = pulseIn(PIN_ECHO, HIGH);
-    distancia = (tiempo/2) /29;
-
+    distancia = (tiempo/2) /29; // (tiempo * 0.034) / 2;
+    delay(10);
     //Serial.println(distancia);
+   
+    if(distancia >= 10 && distancia <= 15){
+        Serial.println(distancia);     
+        // creat JSON message for Socket.IO (event)
+        DynamicJsonDocument doc(1024);
+        JsonArray array = doc.to<JsonArray>();
+        
+        // add evnet name
+        // Hint: socket.on('event_name', ....
+        array.add("ArduinoMessage");
 
-    if(distancia >= 100 || distancia <= 0) {
-      Serial.println("****** no lectura *****");
+        // add payload (parameters) for the event
+        JsonObject param1 = array.createNestedObject();
+        param1["ip_origin"] = WiFi.localIP().toString();
+        param1["command"] = "stop";
+        
+
+        // JSON to String (serializion)
+        String output;
+        serializeJson(doc, output);
+
+        // Send event        
+        socketIO.sendEVENT(output);
+        
+        delay(1000);
+        // Print JSON for debugging
+        USE_SERIAL.println(output);
     }
-    else{
-        if(distancia <= 15 && distancia >= 13){
-            Serial.println(distancia);     
-            // creat JSON message for Socket.IO (event)
-            DynamicJsonDocument doc(1024);
-            JsonArray array = doc.to<JsonArray>();
-            
-            // add evnet name
-            // Hint: socket.on('event_name', ....
-            array.add("ArduinoMessage");
     
-            // add payload (parameters) for the event
-            JsonObject param1 = array.createNestedObject();
-            param1["ip_origin"] = WiFi.localIP().toString();
-            param1["command"] = "stop";
-            
-    
-            // JSON to String (serializion)
-            String output;
-            serializeJson(doc, output);
-    
-            // Send event        
-            socketIO.sendEVENT(output);
-            
-            delay(1000);
-            // Print JSON for debugging
-            USE_SERIAL.println(output);
-        }
-    }
 }
 
 
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
 
     //Serial.println("entro a socketIOEvent");
-    Serial.printf("[IOc] get payload: %s\n", payload);
+    Serial.printf("\n[IOc] get payload: %s\n", payload);
 
     String response = (char*)payload;
     
     if (response.indexOf("backward") > 0) {
-      Serial.printf("hacia atras");
+      Serial.printf("hacia atras\n");
       backwards();
       delay(1000);
       stops();
     }
 
     if (response.indexOf("forward") > 0) {
-      Serial.printf("hacia delante");
+      Serial.printf("hacia delante\n");
       forwards();
       delay(1000);
       stops();
     }
 
     if (response.indexOf("rightward") > 0) {
-      Serial.printf("hacia derecha");
+      Serial.printf("hacia derecha\n");
       rightwards();
       delay(1000);
       stops();
     }
 
     if (response.indexOf("leftward") > 0) {
-      Serial.printf("hacia izquierda");
+      Serial.printf("hacia izquierda\n");
       leftwards();
       delay(1000);
       stops();
     }
 
     if (response.indexOf("stop") > 0) {
-      Serial.printf("Detenido");
+      Serial.printf("Detenido\n");
       stops();
 
       delay(1000);
 
-      Serial.printf("hacia atras");
-      backwards();
+      weird_mov();
       
     }
 
@@ -231,5 +227,15 @@ void stops(){
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
   digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
+
+void weird_mov(){
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  delay(500);
+
+  digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
 }
