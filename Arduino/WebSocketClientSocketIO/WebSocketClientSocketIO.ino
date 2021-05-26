@@ -11,12 +11,12 @@
 ESP8266WiFiMulti WiFiMulti;
 SocketIOclient socketIO;
 
-#define EnableA   15   // Enable motors Right        GPIO15(D8)        
-#define EnableB   4    // Enable motors Left         GPIO4 (D2)
-#define IN1  13        // L298N in1 motors Right     GPIO13(D7)
-#define IN2  12        // L298N in2 motors Right     GPIO12(D6)
-#define IN3  14        // L298N in3 motors Left      GPIO14(D5)
-#define IN4  0         // L298N in4 motors Left      GPIO0 (D3)      
+#define EnableA   15         
+#define EnableB   4    
+#define IN1  13        
+#define IN2  12        
+#define IN3  14        
+#define IN4  0         
 
 #define PIN_TRG D1
 #define PIN_ECHO D0
@@ -50,7 +50,7 @@ void setup() {
   }
     // server address, port and URL
     // "/socket.io/?EIO=4", compatibilidad con ultima versión de socket.io
-  socketIO.begin("35.168.1.210", 3009, "/socket.io/?EIO=4");
+  socketIO.begin("52.91.117.231", 3009, "/socket.io/?EIO=4");
 
     // event handler
   socketIO.onEvent(socketIOEvent);
@@ -105,8 +105,6 @@ void loop() {
 
 
 void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
-
-    //Serial.println("entro a socketIOEvent");
     Serial.printf("\n[IOc] get payload: %s\n", payload);
 
     String response = (char*)payload;
@@ -142,11 +140,8 @@ void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length)
     if (response.indexOf("stop") > 0) {
       Serial.printf("Detenido\n");
       stops();
-
       delay(1000);
-
-      weird_mov();
-      
+      //weird_mov();
     }
 
     switch(type) {

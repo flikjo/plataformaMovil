@@ -35,7 +35,8 @@
                   <td>{{log.date}}</td>
                 </tr>
               </tbody>
-            </table>            
+            </table>
+                        
           </b-card-text></b-tab>
         </b-tabs>
       </b-card>
@@ -43,11 +44,14 @@
   </div>
 </template>
 <script>
+
+import axios from "axios";
+
 export default {
   data () {
     return {
       logs: [],
-      baseURL: 'http://localhost:3009',
+      baseURL: 'http://localhost:3000',
       page: 1,
       perPage: 10,
       pages: [],
@@ -62,11 +66,9 @@ export default {
     this.getLogs();
   },
   
+
   methods: {
-    async getLogs () {
-      const res = await this.axios.get(`${this.baseURL}/logs`);
-      this.logs = res.data.logs;
-    },
+    
     izquierda: function () {
       var a = document.getElementById("myCanvas");
       var atx = a.getContext("2d");
@@ -76,7 +78,17 @@ export default {
       atx.lineTo(this.xfinal, this.yfinal);
       atx.stroke();
       console.log("x Final ="+ this.xfinal + "y Final ="+ this.yfinal)
+      const cmmd_frw = {
+          command: 'leftward',
+          date: new Date(),
+          ip_origin: "182.1.6.59",
+      }
 
+      const headers = { "Access-Control-Allow-Origin": 'http://localhost:3002/api/cmmdLWR' }
+
+      axios.post("http://localhost:3002/api/cmmdLWR", cmmd_frw, {headers}).then((result) => {
+              console.log(result);
+            });
     },
     arriba: function () {
       var a = document.getElementById("myCanvas");
@@ -87,6 +99,19 @@ export default {
       atx.lineTo(this.xfinal, this.yfinal);
       atx.stroke();
       console.log("x Final ="+ this.xfinal + "y Final ="+ this.yfinal)
+
+      const cmmd_frw = {
+          command: 'forward',
+          date: new Date(),
+          ip_origin: "82.10.69.158",
+      }
+
+      const headers = { "Access-Control-Allow-Origin": 'http://localhost:3001/api/cmmdFRW' }
+
+      axios.post("http://localhost:3001/api/cmmdFRW", cmmd_frw, {headers}).then((result) => {
+              console.log(result);
+            });
+
     },
     abajo: function () {
       var a = document.getElementById("myCanvas");
@@ -97,6 +122,18 @@ export default {
       atx.lineTo(this.xfinal, this.yfinal);
       atx.stroke();
       console.log("x Final ="+ this.xfinal + "y Final ="+ this.yfinal)
+
+      const cmmd_frw = {
+          command: 'backward',
+          date: new Date(),
+          ip_origin: "175.2.7.60",
+      }
+
+      const headers = { "Access-Control-Allow-Origin": 'http://localhost:3000/api/cmmdBWR' }
+
+      axios.post("http://localhost:3000/api/cmmdBWR", cmmd_frw, {headers}).then((result) => {
+              console.log(result);
+            });
     },
     derecha: function () {
       var a = document.getElementById("myCanvas");
@@ -106,11 +143,26 @@ export default {
       this.yfinal=this.yfinal;
       atx.lineTo(this.xfinal, this.yfinal);
       atx.stroke();
-      console.log("x Final ="+ this.xfinal + "y Final ="+ this.yfinal)
+      console.log("x Final ="+ this.xfinal + "y Final ="+ this.yfinal) 
+      const cmmd_frw = {
+          command: 'rightward',
+          date: new Date(),
+          ip_origin: "182.1.6.59",
+      }
+
+      const headers = { "Access-Control-Allow-Origin": 'http://localhost:3003/api/cmmdRWR' }
+
+      axios.post("http://localhost:3003/api/cmmdRWR", cmmd_frw, {headers}).then((result) => {
+              console.log(result);
+            });
     },
     addUser(e) {
       e.preventDefault();
       console.log('agregando')
+    },
+    async getLogs () {
+      const res = await this.axios.get(`${this.baseURL}/logs`);
+      this.logs = res.data.logs;
     }
   }
 }
