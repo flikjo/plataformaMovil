@@ -1,2 +1,2 @@
 # plataformaMovil
-plataforma movil usando arduino, open CV, Vue js, GraphQl, node js
+plataforma movil usando arduino, open CV, Vue js,node js
